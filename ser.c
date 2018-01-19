@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <zconf.h>
 
 #define USERNAME_SIZE 32
 #define MESSAGE_SIZE_IN_BYTES 2112
@@ -236,19 +237,14 @@ void groupSendingActivity(Message msg)
     Message confMesg;
     int j;
     int i = findGroup(msg.recieverName);
-    int id = findUser(msg.recieverName);
     if(groups[i].usersInGroup>0) {
         for (j = 0; j < groups[i].usersInGroup; j++) {
             strcpy(msg.recieverName, groups[i].users[j].userName);
             msg.mtype = 1033;
+            int id = findUser(msg.recieverName);
             msgsnd(allUsers[id].qId, &msg, MESSAGE_SIZE_IN_BYTES, 0);
             msgrcv(allUsers[id].qId, &confMesg, MESSAGE_SIZE_IN_BYTES, 1020, 0);
         }
-    }
-    else{
-        confMesg.mtype=1084;
-        strcpy(confMesg.message, "Error\n");
-        msgsnd(allUsers[id].qId, &confMesg, MESSAGE_SIZE_IN_BYTES, 0);
     }
 }
 

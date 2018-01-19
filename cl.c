@@ -230,7 +230,7 @@ int main()
             else if(strcmp(comm, "help")==0){
                 showHelp();
             }
-            else printf("Lul\n");
+            else printf("Command not recognised\n");
         }
     }
 
