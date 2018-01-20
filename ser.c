@@ -135,7 +135,6 @@ void closeUserQueues()
 
 }
 
-
 void launchUserQueues()
 {
     int i;
@@ -153,14 +152,14 @@ Message setListenersForUsers()
         if(msgrcv(allUsers[i].qId, &msg, MESSAGE_SIZE_IN_BYTES, 1011, IPC_NOWAIT)>0) return msg;
         if(msgrcv(allUsers[i].qId, &msg, MESSAGE_SIZE_IN_BYTES, 1012, IPC_NOWAIT)>0) return msg;
         if(msgrcv(allUsers[i].qId, &msg, MESSAGE_SIZE_IN_BYTES, 1013, IPC_NOWAIT)>0) return msg;
-        if(msgrcv(allUsers[i].qId, &msg, MESSAGE_SIZE_IN_BYTES, 1030, IPC_NOWAIT)>0) return msg;
+        //if(msgrcv(allUsers[i].qId, &msg, MESSAGE_SIZE_IN_BYTES, 1030, IPC_NOWAIT)>0) return msg;
         if(msgrcv(allUsers[i].qId, &msg, MESSAGE_SIZE_IN_BYTES, 1031, IPC_NOWAIT)>0) return msg;
         if(msgrcv(allUsers[i].qId, &msg, MESSAGE_SIZE_IN_BYTES, 1032, IPC_NOWAIT)>0) return msg;
-        if(msgrcv(allUsers[i].qId, &msg, MESSAGE_SIZE_IN_BYTES, 1072, IPC_NOWAIT)>0) return msg;
-        if(msgrcv(allUsers[i].qId, &msg, MESSAGE_SIZE_IN_BYTES, 1071, IPC_NOWAIT)>0) return msg;
         if(msgrcv(allUsers[i].qId, &msg, MESSAGE_SIZE_IN_BYTES, 1040, IPC_NOWAIT)>0) return msg;
-        if(msgrcv(allUsers[i].qId, &msg, MESSAGE_SIZE_IN_BYTES, 1051, IPC_NOWAIT)>0) return msg;
-        //if(msgrcv(allUsers[i].qId, &msg, MESSAGE_SIZE_IN_BYTES, 1084, IPC_NOWAIT)>0) return msg;
+        if(msgrcv(allUsers[i].qId, &msg, MESSAGE_SIZE_IN_BYTES, 1041, IPC_NOWAIT)>0) return msg;
+        if(msgrcv(allUsers[i].qId, &msg, MESSAGE_SIZE_IN_BYTES, 1045, IPC_NOWAIT)>0) return msg;
+        if(msgrcv(allUsers[i].qId, &msg, MESSAGE_SIZE_IN_BYTES, 1071, IPC_NOWAIT)>0) return msg;
+        if(msgrcv(allUsers[i].qId, &msg, MESSAGE_SIZE_IN_BYTES, 1072, IPC_NOWAIT)>0) return msg;
     }
     return msg;
 }
@@ -228,22 +227,18 @@ void sendingActivity(Message msg)
     msg.mtype=1030;
     msgsnd(destQue, &msg, MESSAGE_SIZE_IN_BYTES, 0);
     nullifyMessage(msg);
-    msgrcv(destQue, &msg, MESSAGE_SIZE_IN_BYTES, 1020, 0);
     printf("Message delivered successfully\n");
 }
 
 void groupSendingActivity(Message msg)
 {
-    Message confMesg;
     int j;
     int i = findGroup(msg.recieverName);
     if(groups[i].usersInGroup>0) {
         for (j = 0; j < groups[i].usersInGroup; j++) {
-            strcpy(msg.recieverName, groups[i].users[j].userName);
             msg.mtype = 1033;
-            int id = findUser(msg.recieverName);
+            int id = findUser(groups[i].users[j].userName);
             msgsnd(allUsers[id].qId, &msg, MESSAGE_SIZE_IN_BYTES, 0);
-            msgrcv(allUsers[id].qId, &confMesg, MESSAGE_SIZE_IN_BYTES, 1020, 0);
         }
     }
 }
@@ -313,7 +308,7 @@ void fingerActivity(Message msg)
     int user = findUser(msg.senderName);
     Message resMsg;
     strcpy(resMsg.message, "");
-    resMsg.mtype=1081;
+    resMsg.mtype=1042;
     for(i=0; i<AMOUNT_OF_USERS; i++){
         if(allUsers[i].online==1) {strcat(resMsg.message, allUsers[i].userName); strcat(resMsg.message, "\n");}
     }
@@ -323,7 +318,7 @@ void fingerActivity(Message msg)
 
 void gingerActivity(Message msg)
 {
-    msg.mtype=1084;
+    msg.mtype=1043;
     int user = findUser(msg.senderName);
     int id = findGroup(msg.message), i;
     strcpy(msg.message, "");
@@ -331,6 +326,19 @@ void gingerActivity(Message msg)
         if(strcmp(groups[id].users[i].userName, "")!=0) {strcat(msg.message, groups[id].users[i].userName); strcat(msg.message, "\n");}
     }
     msgsnd(allUsers[user].qId, &msg, MESSAGE_SIZE_IN_BYTES, 0);
+}
+
+void groupListActivity(Message msg)
+{
+    int i;
+    msg.mtype=1046;
+    int id = findUser(msg.senderName);
+    strcpy(msg.message,"");
+    for(i=0; i<AMOUNT_OF_GROUPS; i++){
+        strcat(msg.message, groups[i].name);
+        strcat(msg.message, "\n");
+    }
+    msgsnd(allUsers[id].qId, &msg, MESSAGE_SIZE_IN_BYTES, 0);
 }
 
 int main()
@@ -358,7 +366,6 @@ int main()
             } else if (privateMessage.mtype == 1032){
                 printf("Recieved group message from %s ... Processing..\n", privateMessage.senderName);
                 groupSendingActivity(privateMessage);
-                nullifyMessage(privateMessage);
             } else if (privateMessage.mtype == 1071){
                 printf("Recieved group join request... Processing\n");
                 groupJoinActivity(privateMessage);
@@ -367,16 +374,19 @@ int main()
                 printf("Recieved group leave request... Processing\n");
                 groupLeaveActivity(privateMessage);
                 showGroupsWithUsers();
-            } else if(privateMessage.mtype == 1051){
-                printf("Recieved group list request... Processing\n");
+            } else if(privateMessage.mtype == 1041){
+                printf("Recieved group members request... Processing\n");
                 gingerActivity(privateMessage);
+            } else if(privateMessage.mtype == 1045){
+                printf("Recieved grop list request... Processing\n");
+                groupListActivity(privateMessage);
             }
         }
     }
     else
     {
         while(1){
-            msgrcv(logId, &publicMessage, MESSAGE_SIZE_IN_BYTES, 0, 0);                 // ustawienie nasluchu na kolejce publicznej do logowania
+            msgrcv(logId, &publicMessage, MESSAGE_SIZE_IN_BYTES, 0, 0);           // ustawienie nasluchu na kolejce publicznej do logowania, wylogowywania i spisu online
             if (publicMessage.mtype == 1001) {
                 printf("Recieved login request from %s ... Processing.. \n", publicMessage.senderName);
                 loginActivity(publicMessage.senderName, publicMessage.message);
@@ -395,5 +405,5 @@ int main()
             }
         }
     }
-    return 0;
+    //return 0;
 }

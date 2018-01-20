@@ -97,14 +97,17 @@ void launchSendingActivity(int id, char name[])
 Message getMessage(int privId)
 {
     Message msg={0};
-    if(msgrcv(privId, &msg, MESSAGE_SIZE_IN_BYTES, 1030, IPC_NOWAIT)>0) return msg;
-    else if(msgrcv(privId, &msg, MESSAGE_SIZE_IN_BYTES, 1012, IPC_NOWAIT)>0) return msg;
+    if(msgrcv(privId, &msg, MESSAGE_SIZE_IN_BYTES, 1012, IPC_NOWAIT)>0) return msg;
+    else if(msgrcv(privId, &msg, MESSAGE_SIZE_IN_BYTES, 1030, IPC_NOWAIT)>0) return msg;
     else if(msgrcv(privId, &msg, MESSAGE_SIZE_IN_BYTES, 1033, IPC_NOWAIT)>0) return msg;
+    else if(msgrcv(privId, &msg, MESSAGE_SIZE_IN_BYTES, 1034, IPC_NOWAIT)>0) return msg;
+    else if(msgrcv(privId, &msg, MESSAGE_SIZE_IN_BYTES, 1042, IPC_NOWAIT)>0) return msg;
+    else if(msgrcv(privId, &msg, MESSAGE_SIZE_IN_BYTES, 1043, IPC_NOWAIT)>0) return msg;
+    else if(msgrcv(privId, &msg, MESSAGE_SIZE_IN_BYTES, 1046, IPC_NOWAIT)>0) return msg;
     else if(msgrcv(privId, &msg, MESSAGE_SIZE_IN_BYTES, 1081, IPC_NOWAIT)>0) return msg;
     else if(msgrcv(privId, &msg, MESSAGE_SIZE_IN_BYTES, 1082, IPC_NOWAIT)>0) return msg;
     else if(msgrcv(privId, &msg, MESSAGE_SIZE_IN_BYTES, 1083, IPC_NOWAIT)>0) return msg;
     else if(msgrcv(privId, &msg, MESSAGE_SIZE_IN_BYTES, 1084, IPC_NOWAIT)>0) return msg;
-    else if(msgrcv(privId, &msg, MESSAGE_SIZE_IN_BYTES, 1034, IPC_NOWAIT)>0) return msg;
     else return msg;
 }
 
@@ -120,7 +123,6 @@ void displayUserMessage(int privateQue, Message recievedMessage, char name[])
 {
     printf(STYLE_BOLD COLOR_GREEN "%s " RESET STYLE_NO_BOLD, recievedMessage.senderName);
     printf("whispers: %s", recievedMessage.message);
-    sendConfirmationMessage(privateQue, name);
 }
 
 void launchGroupSendingActivity(char name[], int privateQue)
@@ -167,7 +169,7 @@ void launchFingerActivity(char name[], int publicQue)
 void launchGingerActivity(char name[], int privateQue)
 {
     Message msg;
-    msg.mtype=1051;
+    msg.mtype=1041;
     strcpy(msg.senderName, name);
     scanf("%s", msg.message);
     printf(COLOR_GREEN "Users in group (%s)\n" RESET, msg.message);
@@ -183,6 +185,15 @@ void showHelp()
     printf("ginger <groupname> - show all users belonging to given group\n");
     printf("broadcast <groupname> <message> - send a message to all members of the given group\n");
     printf("logout - logs the user out of server\n");
+}
+
+void launchGroupsList(char name[], int privateQue)
+{
+    Message msg;
+    msg.mtype=1045;
+    strcpy(msg.senderName, name);
+    printf(BOLDYELLOW "Available groups:\n" RESET);
+    msgsnd(privateQue, &msg, MESSAGE_SIZE_IN_BYTES, 0);
 }
 
 int main()
@@ -227,6 +238,9 @@ int main()
             else if(strcmp(comm, "leave")==0){
                 launchLeaveActivity(name, privateQueueId);
             }
+            else if(strcmp(comm, "groups")==0){
+                launchGroupsList(name, privateQueueId);
+            }
             else if(strcmp(comm, "help")==0){
                 showHelp();
             }
@@ -243,12 +257,14 @@ int main()
                 displayUserMessage(privateQueueId, recievedMessage, name);
            }
            else if(recievedMessage.mtype == 1081 || recievedMessage.mtype == 1082
-                   || recievedMessage.mtype==1083 || recievedMessage.mtype==1084 || recievedMessage.mtype == 1034){
+                || recievedMessage.mtype == 1083 || recievedMessage.mtype == 1084
+                || recievedMessage.mtype == 1034 || recievedMessage.mtype == 1042
+                || recievedMessage.mtype == 1043 || recievedMessage.mtype == 1046){
                printf("%s\n", recievedMessage.message);
            }
            else if(recievedMessage.mtype == 1033){
-               sendConfirmationMessage(privateQueueId, name);
-               printf(BOLDYELLOW "Group message from %s: " RESET "%s"  , recievedMessage.senderName, recievedMessage.message);
+               printf(BOLDYELLOW "Group message from %s (group %s): " RESET , recievedMessage.senderName,  recievedMessage.recieverName);
+               printf("%s", recievedMessage.message);
            }
            else if(recievedMessage.mtype == 1012){
                kill(pid, SIGKILL);
