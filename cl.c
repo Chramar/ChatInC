@@ -61,10 +61,7 @@ int launchLoginActivity(int id, char nickname[], char password[])
         nullifyMessage(temp1);
     }
     else if(temp1.mtype==1013){
-        if (strcmp(temp1.message,"0")==0) printf("%s\n", NO_USER_FOUND);
-        else if (strcmp(temp1.message,"-1")==0) printf("Wrong password\n");
-        else if (strcmp(temp1.message, "-2")==0) printf("Account blocked!\n");
-        else if (strcmp(temp1.message, "-3")==0) printf("%s\n",USER_ALREADY_LOGGED_IN_MESSAGE);
+       printf(temp1.message);
     }
 
     return priv;
@@ -211,6 +208,7 @@ int main()
         scanf("%s",(char*)&password);
         privateQueueId = launchLoginActivity(logId, name, password);                // pod privateQueueId podstaw id kolejki prywatnej
     } while(privateQueueId==0 );
+
     printf("Write help to view available commands\n");
    if ((pid = fork())) {                                                           // proces rodzic do obslugi komend
         while (privateQueueId > 0)

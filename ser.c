@@ -13,6 +13,9 @@
 #define AMOUNT_OF_GROUPS 3
 #define WELCOME_MESSAGE "You have logged in, welcome to the community"
 #define USER_ALREADY_LOGGED_IN_MESSAGE "This user is already logged in"
+#define NO_USER_FOUND "Cannot find that user in the database"
+#define WRONG_PASSWORD "Wrong password!"
+
 
 int pid;
 int logId;
@@ -152,7 +155,6 @@ Message setListenersForUsers()
         if(msgrcv(allUsers[i].qId, &msg, MESSAGE_SIZE_IN_BYTES, 1011, IPC_NOWAIT)>0) return msg;
         if(msgrcv(allUsers[i].qId, &msg, MESSAGE_SIZE_IN_BYTES, 1012, IPC_NOWAIT)>0) return msg;
         if(msgrcv(allUsers[i].qId, &msg, MESSAGE_SIZE_IN_BYTES, 1013, IPC_NOWAIT)>0) return msg;
-        //if(msgrcv(allUsers[i].qId, &msg, MESSAGE_SIZE_IN_BYTES, 1030, IPC_NOWAIT)>0) return msg;
         if(msgrcv(allUsers[i].qId, &msg, MESSAGE_SIZE_IN_BYTES, 1031, IPC_NOWAIT)>0) return msg;
         if(msgrcv(allUsers[i].qId, &msg, MESSAGE_SIZE_IN_BYTES, 1032, IPC_NOWAIT)>0) return msg;
         if(msgrcv(allUsers[i].qId, &msg, MESSAGE_SIZE_IN_BYTES, 1040, IPC_NOWAIT)>0) return msg;
@@ -179,16 +181,16 @@ void loginActivity(char name[], char password[])
         }
         else if (allUsers[i].ifBlocked==1){
             msg.mtype=1013;
-            strcpy(msg.message, "-2");
+            strcpy(msg.message, NO_USER_FOUND);
         }
         else if (isUserLogged(name)==1){
             msg.mtype=1013;
-            strcpy(msg.message, "-3");
+            strcpy(msg.message, USER_ALREADY_LOGGED_IN_MESSAGE);
         }
         else{
             allUsers[i].loginAttempts++;
             msg.mtype=1013;
-            strcpy(msg.message, "-1");
+            strcpy(msg.message, WRONG_PASSWORD);
             if(allUsers[i].loginAttempts>=5) allUsers[i].ifBlocked=1;
         }
     }
@@ -295,7 +297,6 @@ void groupLeaveActivity(Message msg)
     int userInGroupArray = isUserInGroup(msg.senderName, msg.message);
     if(i>-1 && (userInGroupArray>=0)) {
         strcpy(groups[i].users[userInGroupArray].userName, "");
-        groups[i].usersInGroup--;
         sendLeaveConfirmation(user);
     }
     else sendLeaveCancellation(user);
